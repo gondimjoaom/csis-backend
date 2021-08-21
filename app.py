@@ -22,8 +22,10 @@ class Detector():
     def __init__(self):
         self.currentFrame = np.zeros((1280,720))
         self.frameCount = 0
+        self.stop = False
+        self.save_img = False
     def detect(self, save_img=False):
-        global streamer
+        self.stop = False
         source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
         save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
         webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -70,6 +72,7 @@ class Detector():
         t0 = time.time()
         self.frameCount = 0
         for path, img, im0s, vid_cap in dataset:
+            if self.stop: break
             img = torch.from_numpy(img).to(device)
             img = img.half() if half else img.float()  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -135,7 +138,7 @@ class Detector():
                 self.currentFrame = im0
                 self.frameCount -=- 1
                 # Save results (image with detections)
-                if save_img:
+                if self.save_img:
                     if dataset.mode == 'image':
                         cv2.imwrite(save_path, im0)
                     else:  # 'video' or 'stream'
@@ -184,6 +187,12 @@ def videoweb2():
 def trigger():
     global detector
     detector.detect() #for loop
+    return None
+@app.route('/csis-stop', methods=['GET'])
+def stop():
+    global detector
+    detector.stop = True
+    return None
 # def flaskThread(port):
 #     app.config['ENV'] = 'production'
 #     app.run(port=port, host='0.0.0.0')
@@ -191,8 +200,8 @@ def trigger():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--weights', nargs='+', type=str, default='weights/bestMGD.pt', help='model.pt path(s)')
+    parser.add_argument('--source', type=str, default='video/sample.mp4', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
