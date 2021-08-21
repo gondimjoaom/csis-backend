@@ -23,19 +23,22 @@ class Detector():
         self.stop = False
         self.save_img = False
     def detect(self, save_img=False):
+        global frame
+        global frame_count
         self.stop = False
-        source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-        save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
+        # source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+        source, weights, view_img, save_txt, imgsz = 'video/sample.mp4', 'weights/bestMGD.pt', False, False, 640
+        save_img = not True and not source.endswith('.txt')  # save inference images
         webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
             ('rtsp://', 'rtmp://', 'http://', 'https://'))
 
         # Directories
-        save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
-        (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        # save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
+        # (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Initialize
         set_logging()
-        device = select_device(opt.device)
+        device = select_device('')
         half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Load model
@@ -79,10 +82,11 @@ class Detector():
 
             # Inference
             t1 = time_synchronized()
-            pred = model(img, augment=opt.augment)[0]
+            pred = model(img, augment=False)[0]
 
             # Apply NMS
-            pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+            # pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+            pred = non_max_suppression(pred, 0.25, 0.45, classes=[], agnostic=False)
             t2 = time_synchronized()
 
             # Apply Classifier
@@ -97,8 +101,8 @@ class Detector():
                     p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
                 p = Path(p)  # to Path
-                save_path = str(save_dir / p.name)  # img.jpg
-                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+                # save_path = str(save_dir / p.name)  # img.jpg
+                # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
                 s += '%gx%g ' % img.shape[2:]  # print string
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
                 if len(det):
@@ -112,15 +116,15 @@ class Detector():
 
                     # Write results
                     for *xyxy, conf, cls in reversed(det):
-                        if save_txt:  # Write to file
-                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                            line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
-                            with open(txt_path + '.txt', 'a') as f:
-                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        # if save_txt:  # Write to file
+                        #     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            # line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                            # with open(txt_path + '.txt', 'a') as f:
+                            #     f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                        if save_img or view_img:  # Add bbox to image
-                            label = f'{names[int(cls)]} {conf:.2f}'
-                            plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                        # if save_img or view_img:  # Add bbox to image
+                        label = f'{names[int(cls)]} {conf:.2f}'
+                        plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
                 # Print time (inference + NMS)
                 print(f'{s}Done. ({t2 - t1:.3f}s)')
@@ -130,79 +134,86 @@ class Detector():
                     cv2.imshow(str(p), im0)
                     cv2.waitKey(1)  # 1 millisecond
                 self.currentFrame = im0
+                frame = im0
                 self.frameCount -=- 1
+                frame_count -=- 1
                 # Save results (image with detections)
-                if self.save_img:
-                    if dataset.mode == 'image':
-                        cv2.imwrite(save_path, im0)
-                    else:  # 'video' or 'stream'
-                        if vid_path != save_path:  # new video
-                            vid_path = save_path
-                            if isinstance(vid_writer, cv2.VideoWriter):
-                                vid_writer.release()  # release previous video writer
-                            if vid_cap:  # video
-                                fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            else:  # stream
-                                fps, w, h = 30, im0.shape[1], im0.shape[0]
-                                save_path += '.mp4'
-                            vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                        vid_writer.write(im0)
+                # if self.save_img:
+                #     if dataset.mode == 'image':
+                #         cv2.imwrite(save_path, im0)
+                #     else:  # 'video' or 'stream'
+                #         if vid_path != save_path:  # new video
+                #             vid_path = save_path
+                #             if isinstance(vid_writer, cv2.VideoWriter):
+                #                 vid_writer.release()  # release previous video writer
+                #             if vid_cap:  # video
+                #                 fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                #                 w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                #                 h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                #             else:  # stream
+                #                 fps, w, h = 30, im0.shape[1], im0.shape[0]
+                #                 save_path += '.mp4'
+                #             vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                #         vid_writer.write(im0)
 
-        if save_txt or save_img:
-            s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-            print(f"Results saved to {save_dir}{s}")
+        # if save_txt or save_img:
+        #     s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
+        #     print(f"Results saved to {save_dir}{s}")
 
         print(f'Done. ({time.time() - t0:.3f}s)')
 
-    def returnFrame(self):
-        lastFrame = -1
-        frame = '' 
-        while True:
-            if lastFrame != self.frameCount:
-                currentFrame = self.currentFrame
-                # if self.cfg['resized_img_w'] != 0 or self.cfg['resized_img_h'] != 0:
-                #     currentFrame = cv2.resize(currentFrame, (self.cfg['resized_img_w'], self.cfg['resized_img_h']))
-                _, buffer = cv2.imencode('.jpg', currentFrame)
-                frame = buffer.tobytes()
-                lastFrame = self.frameCount
-            yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+def returnFrame():
+    # global frame
+    # global frame_count
+    global detector
+    lastFrame = -1
+    frame = '' 
+    while True:
+        # print(detector.currentFrame)
+        if lastFrame != detector.frameCount:
+            currentFrame = detector.currentFrame
+            # if self.cfg['resized_img_w'] != 0 or self.cfg['resized_img_h'] != 0:
+            #     currentFrame = cv2.resize(currentFrame, (self.cfg['resized_img_w'], self.cfg['resized_img_h']))
+            _, buffer = cv2.imencode('.jpg', currentFrame)
+            frame = buffer.tobytes()
+            lastFrame = frame_count
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 app = Flask(__name__, static_url_path="/static")
 
-@app.route('/csis-show', methods=['GET'])
+@app.route('/show', methods=['GET'])
 def videoweb2():
     global detector
-    return Response(detector.returnFrame(), direct_passthrough=True,
+    return Response(returnFrame(), direct_passthrough=True,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-@app.route('/csis-start', methods=['GET'])
+@app.route('/start', methods=['GET'])
 def trigger():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='weights/bestMGD.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='video/sample.mp4', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-    parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
-    parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--project', default='runs/detect', help='save results to project/name')
-    parser.add_argument('--name', default='exp', help='save results to project/name')
-    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--rtsp', action='store_true', help='existing project/name ok, do not increment')
-    opt = parser.parse_args()
+    global detector
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--weights', nargs='+', type=str, default='weights/bestMGD.pt', help='model.pt path(s)')
+    # parser.add_argument('--source', type=str, default='video/sample.mp4', help='source')  # file/folder, 0 for webcam
+    # parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    # parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
+    # parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
+    # parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    # parser.add_argument('--view-img', action='store_true', help='display results')
+    # parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    # parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    # parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
+    # parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
+    # parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
+    # parser.add_argument('--augment', action='store_true', help='augmented inference')
+    # parser.add_argument('--update', action='store_true', help='update all models')
+    # parser.add_argument('--project', default='runs/detect', help='save results to project/name')
+    # parser.add_argument('--name', default='exp', help='save results to project/name')
+    # parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    # parser.add_argument('--rtsp', action='store_true', help='existing project/name ok, do not increment')
+    # opt = parser.parse_args()
     detector = Detector()
     detector.detect() #for loop
     return None
-@app.route('/csis-stop', methods=['GET'])
+@app.route('/stop', methods=['GET'])
 def stop():
     global detector
     detector.stop = True
@@ -217,6 +228,8 @@ if __name__ == '__main__':
     # print(opt)
     # check_requirements(exclude=('pycocotools', 'thop'))
     detector = None
+    frame = None
+    frame_count = 0
     threading.Thread(target=flaskThread, args=(8080, )).start()
     # app.config['ENV'] = 'production'
     # app.run()
