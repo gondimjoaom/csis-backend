@@ -14,7 +14,7 @@ from torch.cuda import amp
 
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh
-from utils.plots import color_list, plot_one_box
+from utils.plots import  plot_one_box
 from utils.torch_utils import time_synchronized
 
 
@@ -311,29 +311,29 @@ class Detections:
         self.t = tuple((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
         self.s = shape  # inference BCHW shape
 
-    def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
-        colors = color_list()
-        for i, (img, pred) in enumerate(zip(self.imgs, self.pred)):
-            str = f'image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} '
-            if pred is not None:
-                for c in pred[:, -1].unique():
-                    n = (pred[:, -1] == c).sum()  # detections per class
-                    str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
-                if show or save or render:
-                    for *box, conf, cls in pred:  # xyxy, confidence, class
-                        label = f'{self.names[int(cls)]} {conf:.2f}'
-                        plot_one_box(box, img, label=label, color=colors[int(cls) % 10])
-            img = Image.fromarray(img.astype(np.uint8)) if isinstance(img, np.ndarray) else img  # from np
-            if pprint:
-                print(str.rstrip(', '))
-            if show:
-                img.show(self.files[i])  # show
-            if save:
-                f = self.files[i]
-                img.save(Path(save_dir) / f)  # save
-                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
-            if render:
-                self.imgs[i] = np.asarray(img)
+    # def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
+    #     colors = color_list()
+    #     for i, (img, pred) in enumerate(zip(self.imgs, self.pred)):
+    #         str = f'image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} '
+    #         if pred is not None:
+    #             for c in pred[:, -1].unique():
+    #                 n = (pred[:, -1] == c).sum()  # detections per class
+    #                 str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
+    #             if show or save or render:
+    #                 for *box, conf, cls in pred:  # xyxy, confidence, class
+    #                     label = f'{self.names[int(cls)]} {conf:.2f}'
+    #                     plot_one_box(box, img, label=label, color=colors[int(cls) % 10])
+    #         img = Image.fromarray(img.astype(np.uint8)) if isinstance(img, np.ndarray) else img  # from np
+    #         if pprint:
+    #             print(str.rstrip(', '))
+    #         if show:
+    #             img.show(self.files[i])  # show
+    #         if save:
+    #             f = self.files[i]
+    #             img.save(Path(save_dir) / f)  # save
+    #             print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
+    #         if render:
+    #             self.imgs[i] = np.asarray(img)
 
     def print(self):
         self.display(pprint=True)  # print results

@@ -214,7 +214,7 @@ if __name__ == '__main__':
     parser.add_argument('--rtsp', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
     print(opt)
-    check_requirements(exclude=('pycocotools', 'thop'))
+    # check_requirements(exclude=('pycocotools', 'thop'))
     detector = Detector()
     # threading.Thread(target=flaskThread, args=(8080, )).start()
     app.config['ENV'] = 'production'
