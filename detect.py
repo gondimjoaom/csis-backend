@@ -175,14 +175,18 @@ class Detector():
 
 app = Flask(__name__, static_url_path="/static")
 
-@app.route('/csis', methods=['GET'])
+@app.route('/csis-show', methods=['GET'])
 def videoweb2():
     global detector
     return Response(detector.returnFrame(), direct_passthrough=True,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-def flaskThread(port):
-    app.config['ENV'] = 'production'
-    app.run(port=port, host='0.0.0.0')
+@app.route('/csis-start', methods=['GET'])
+def trigger():
+    global detector
+    detector.detect() #for loop
+# def flaskThread(port):
+#     app.config['ENV'] = 'production'
+#     app.run(port=port, host='0.0.0.0')
 
 
 if __name__ == '__main__':
@@ -208,16 +212,19 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print(opt)
     check_requirements(exclude=('pycocotools', 'thop'))
-    threading.Thread(target=flaskThread, args=(8080, )).start()
     detector = Detector()
-    with torch.no_grad():
-        if opt.update:  # update all models (to fix SourceChangeWarning)
-            for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detector.detect()
-                strip_optimizer(opt.weights)
-        else:
-            if opt.rtsp:
-                streamer = None
-            else:
-                streamer = 1
-            detector.detect()
+    # threading.Thread(target=flaskThread, args=(8080, )).start()
+    app.config['ENV'] = 'production'
+    app.run()
+    
+    # with torch.no_grad():
+    #     if opt.update:  # update all models (to fix SourceChangeWarning)
+    #         for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
+    #             detector.detect()
+    #             strip_optimizer(opt.weights)
+    #     else:
+    #         if opt.rtsp:
+    #             streamer = None
+    #         else:
+    #             streamer = 1
+    #         # detector.detect()
