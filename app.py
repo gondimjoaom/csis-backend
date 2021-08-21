@@ -187,9 +187,9 @@ def stop():
     global detector
     detector.stop = True
     return None
-# def flaskThread(port):
-#     app.config['ENV'] = 'production'
-#     app.run(port=port, host='0.0.0.0')
+def flaskThread(port):
+    app.config['ENV'] = 'production'
+    app.run(port=port, host='0.0.0.0')
 
 
 if __name__ == '__main__':
@@ -216,9 +216,9 @@ if __name__ == '__main__':
     print(opt)
     # check_requirements(exclude=('pycocotools', 'thop'))
     detector = Detector()
-    # threading.Thread(target=flaskThread, args=(8080, )).start()
-    app.config['ENV'] = 'production'
-    app.run()
+    threading.Thread(target=flaskThread, args=(8080, )).start()
+    # app.config['ENV'] = 'production'
+    # app.run()
     
     # with torch.no_grad():
     #     if opt.update:  # update all models (to fix SourceChangeWarning)
