@@ -179,20 +179,6 @@ def videoweb2():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 @app.route('/csis-start', methods=['GET'])
 def trigger():
-    detector = Detector()
-    detector.detect() #for loop
-    return None
-@app.route('/csis-stop', methods=['GET'])
-def stop():
-    global detector
-    detector.stop = True
-    return None
-def flaskThread(port):
-    app.config['ENV'] = 'production'
-    app.run(port=port, host='0.0.0.0')
-
-
-if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='weights/bestMGD.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='video/sample.mp4', help='source')  # file/folder, 0 for webcam
@@ -213,7 +199,22 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--rtsp', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
-    print(opt)
+    detector = Detector()
+    detector.detect() #for loop
+    return None
+@app.route('/csis-stop', methods=['GET'])
+def stop():
+    global detector
+    detector.stop = True
+    return None
+def flaskThread(port):
+    app.config['ENV'] = 'production'
+    app.run(port=port, host='0.0.0.0')
+
+
+if __name__ == '__main__':
+    
+    # print(opt)
     # check_requirements(exclude=('pycocotools', 'thop'))
     detector = None
     threading.Thread(target=flaskThread, args=(8080, )).start()
