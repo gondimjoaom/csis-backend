@@ -179,7 +179,7 @@ def videoweb2():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 @app.route('/csis-start', methods=['GET'])
 def trigger():
-    global detector
+    detector = Detector()
     detector.detect() #for loop
     return None
 @app.route('/csis-stop', methods=['GET'])
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print(opt)
     # check_requirements(exclude=('pycocotools', 'thop'))
-    detector = Detector()
+    detector = None
     threading.Thread(target=flaskThread, args=(8080, )).start()
     # app.config['ENV'] = 'production'
     # app.run()
