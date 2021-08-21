@@ -21,4 +21,4 @@ six==1.16.0
 tifffile==2021.6.14
 Werkzeug==2.0.1
 opencv-python-headless
-torch==1.7.1
+torch==1.7.1+cpu
