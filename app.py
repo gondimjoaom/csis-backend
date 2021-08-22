@@ -27,7 +27,7 @@ class Detector():
         global frame_count
         self.stop = False
         # source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-        source, weights, view_img, save_txt, imgsz = 'video/sample.mp4', './bestMGD.pt', False, False, 640
+        source, weights, view_img, save_txt, imgsz = 'video/sample.mp4', 'weights/bestMGD.pt', False, False, 640
         save_img = not True and not source.endswith('.txt')  # save inference images
         webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
             ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -230,10 +230,10 @@ if __name__ == '__main__':
     detector = None
     frame = None
     frame_count = 0
-    from google_drive_downloader import GoogleDriveDownloader as gdd
-    gdd.download_file_from_google_drive(file_id='1bzciVMAHM3c7xfuBNISOKvJm0A-QaBx0',
-                                    dest_path='./bestMGD.pt',
-                                    unzip=False)
+    # from google_drive_downloader import GoogleDriveDownloader as gdd
+    # gdd.download_file_from_google_drive(file_id='1bzciVMAHM3c7xfuBNISOKvJm0A-QaBx0',
+    #                                 dest_path='./bestMGD.pt',
+    #                                 unzip=False)
     threading.Thread(target=flaskThread, args=(8080, )).start()
     # app.config['ENV'] = 'production'
     # app.run()

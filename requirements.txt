@@ -27,4 +27,3 @@ torchvision==0.9.2+cpu
 requests
 tqdm
 PyYAML==5.4.1
-googledrivedownloader
